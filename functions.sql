@@ -119,3 +119,37 @@ begin
    RAISE NOTICE 'Agent was deleted';
 end;
 $$ language plpgsql;
+
+create or replace function agent_regents(name text) returns table(regents text) as
+$$
+begin
+    if (select count(*) from agents where agents.name=name) = 0 then
+        RAISE NOTICE 'There is no agent with this name';
+	return;
+    elseif (select count(*) from agents where agents.name=name) > 1 then
+        RAISE NOTICE 'Attention! There is a person with the same name, please use id';
+	return;
+    end if;
+    return query select regents.name from regents
+	join regent_set on regent_set.id_regent=regents.id_regent
+    	join regents_session on regents_session.id_session=regent_set.id_regent_session
+	join agents on agents.id_session=regents_session.id_session
+	where agents.name=name;
+end;
+$$ language plpgsql;
+
+create or replace function agent_regents(id integer) returns table(regents text) as
+$$
+begin
+    if (select count(*) from agents where agents.id_agent=id) = 0 then
+        RAISE NOTICE 'There is no agent with this id';
+	return;
+    end if;
+    return query select regents.name from regents
+	join regent_set on regent_set.id_regent=regents.id_regent
+    	join regents_session on regents_session.id_session=regent_set.id_regent_session
+	join agents on agents.id_session=regents_session.id_session
+	where agents.id_agent=id;
+end;
+$$ language plpgsql;
+
